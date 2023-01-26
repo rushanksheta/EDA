@@ -1,0 +1,137 @@
+---
+title: "Assignment 1"
+author: "Rushank Sheta"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+```{r}
+#install.packages("ggplot2")
+#install.packages("dplyr")
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+df = read.csv("cytof_one_experiment.csv")
+```
+
+```{r}
+head(df)
+```
+### Checking out the data
+
+```{r}
+dim(df)
+```
+
+```{r}
+str(df)
+```
+```{r}
+#theme_set(theme_bw()) + theme_update(plot.title = element_text(hjust = 0.5))
+```
+
+### Empirical CDF plot
+```{r}
+ggplot(df, aes(x = INFg)) + 
+  stat_ecdf() + 
+  scale_y_continuous(n.breaks=10) + 
+  ggtitle('ECDF') + 
+  ylab('Density')
+```
+__Inference: Empirical CDF__ <br>
+_1. 14% of the data has values less than 0_<br>
+_2. Flat line on density=0.0 from -1.2 to -0.6 suggests that there are no ppints in this region; flat line after 4.5 suggests that there are very few data points with values less than -0.5 and greater than 4.5 i.e low density regions_<br>
+_3. Less than 1% values in the "INFg" column have values greater than 5_<br>
+_4. Because of high slope of the ECDF plot from -0.6 to 4, we can say that this is the region where most of the points lie, around 95% of the data(0.95-0.0)_<br>
+_5. There are no values less than -0.6 and more than 8.1_ <br>
+_6. The ECDF plot is very smooth here which suggests that there are very high number of rows in dataframe_<br>
+
+
+### Density Plot
+
+```{r}
+ggplot(df, aes(x = INFg)) +
+  geom_density() +
+  geom_rug(aes(y = 0), sides = "b", position = position_jitter(height = 0)) +
+  scale_y_continuous(n.breaks=5) +
+  ggtitle('Density Estimate') + 
+  ylab('Frequency')
+```
+__Inference: Density Estimate__ <br>
+_1. The peak at 2.8 suggests that most of the datapoints have value 2.8_<br>
+_2. There are two significant peaks(-0.4, 2.8) in the Density plot so we can sat that the data is bimodal_<br>
+_3. From the rug plot, the region from -0.6 to 5.3 has most of the points as we can not see any individual whiskers in this region whereas after 5.3 the rug plot is not that dense hence there are comparatively less points here_<br>
+_4. The upper tail is close to 0 which means very few points lie towards the upper tail_<br>
+```{r}
+ggplot(df, aes(x = INFg)) +
+  geom_density(adjust = 0.1, aes(color='scale: 0.05')) +
+  geom_density(adjust = 5, aes(color='scale: 5')) +
+  geom_rug(aes(y = 0), sides = "b", position = position_jitter(height = 0)) +
+  scale_y_continuous(n.breaks=5) +
+  ggtitle('Density Estimate') + 
+  ylab('Frequency')
+```
+__Inference: Density Estimate - adjusting "adjust" parameter__ <br>
+_1. Lowering the adjust gives more detailed information, like most of the datapoints have value 3.2(2.8 from the default plot)_<br>
+_2. Increasing the adjust gives smoother curve but overlloks the fact that data has 2 peeks while with adjust=5 we can only notice one peak at 2.7_<br>
+
+### Histogram
+```{r}
+ggplot(df, aes(x = INFg)) +
+  geom_histogram(bins=50) +
+  scale_y_continuous(n.breaks=20) +
+  ggtitle('Histogram') + 
+  ylab('Count')
+```
+__Inference: Histogram__ <br>
+_1. Around 2650 data points have value 3 which is the first highest followed by value -0.6 with 1900 observations_<br>
+_2. Upper tail is very flat which means there are very few values after INFg=5_<br>
+_3. Every individual vertical lines represents the count for that value(range) hence summing all the counts for each bins will give us 50,000_<br>
+
+### QQ Plot
+```{r}
+col1 = df$CD8
+col2 = df$CD4
+```
+
+
+```{r}
+qq.df = as.data.frame(qqplot(col1, col2 ,plot.it = FALSE))
+
+head(qq.df)
+```
+
+```{r}
+ggplot(qq.df, aes(x = x, y = y)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0) +
+    xlab("CD8") + ylab("CD4")
+```
+ __Inference: QQ Plot__ <br>
+_1. We can see that the lowest point is falling on the y=x line hene, CD4 and CD8 both has same lowest values_<br>
+_2. CD8 increases by a polynomial factor from the lowest point until CD4=0, after that CD8 increases by approximately a constant factor as CD4 increases(parallel to y=x)_<br>
+_3. Using sampling below to focus more on individual values_<br>
+
+_Sampling to get a better distinct view_
+```{r}
+sample100 = sample_n(df, 100) 
+col3 = sample100$CD8
+col4 = sample100$CD4
+qq.df2 = as.data.frame(qqplot(col3, col4 ,plot.it = FALSE))
+ggplot(qq.df2, aes(x = x, y = y)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0) +
+  xlab("CD8") + ylab("CD4") +
+  ggtitle('QQ Plot') + 
+  scale_y_continuous(n.breaks=9)
+
+```
+__Inference: QQ Plot - sampled data__ <br><br>
+_1. Since the points are not falling on the 45degree line, we can say that the attributes CD8 and CD4 do not have similar distrubutions_<br>
+_2. Smallest value of CD8 and CD4 is -0.6 since they fall on the y=x line _<br>
+_3. Largest value of CD8 is 5.3 whereas for CD4 it is 3.3, this suggests that CD8 has bigger range than CD4_<br>
